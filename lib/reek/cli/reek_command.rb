@@ -19,12 +19,18 @@ module Reek
       end
 
       def execute(view)
-        total_smells_count = 0
-        @sources.each do |source|
-          examiner = Examiner.new(source, @config_files)
-          total_smells_count += examiner.smells_count
+        examiners = @sources.map do |source|
+          Examiner.new(source, @config_files)
+        end
+
+        examiners = examiners.sort_by { |examiner| examiner.smells_count }
+        
+        examiners.each do |examiner|
           view.output @reporter.report(examiner)
         end
+
+        total_smells_count = examiners.map(&:smells_count).inject(0, :+)
+        
         if total_smells_count > 0
           view.report_smells
         else
